@@ -19,3 +19,26 @@ impl Hash {
         Hash(U256::from(hash_array))
     }
 }
+
+#[cfg(test)]
+mod hash {
+    use super::*;
+    use std::any::type_name as std_type_name;
+
+    #[derive(Serialize, Deserialize)]
+    struct Foo(usize);
+
+    #[test]
+    fn hash() {
+        let foo = Foo(144);
+        let hash = Hash::hash(&foo).0;
+        println!("hash - {:?}", hash);
+
+        assert_eq!(hash.bits(), 255);
+        assert_eq!(type_name::<_>(hash), "btclib::U256")
+    }
+
+    fn type_name<T>(_: T) -> &'static str {
+        std_type_name::<T>()
+    }
+}
