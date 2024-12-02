@@ -51,7 +51,12 @@ mod hash {
         println!("{}", hash);
 
         assert_eq!(hash.0.bits(), 255);
-        assert_eq!(type_name::<_>(hash.0), "btclib::U256")
+        assert_eq!(type_name::<_>(hash.0), "btclib::U256");
+    }
+
+    #[test]
+    fn zero() {
+        assert!(Hash::zero().0.is_zero(), "is zero");
     }
 
     fn type_name<T>(_: T) -> &'static str {
