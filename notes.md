@@ -1,1 +1,3 @@
 - [x] CBOR
+- [x] trait associated types
+- [x] attributes like #[serde(...)]
