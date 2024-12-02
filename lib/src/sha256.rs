@@ -1,7 +1,8 @@
-use crate::U256;
-use k256::elliptic_curve::consts::U2;
 use serde::{Deserialize, Serialize};
 use sha256::digest;
+use std::fmt;
+
+use crate::U256;
 
 #[derive(Clone, Copy, Serialize, Deserialize, Debug, PartialEq, Eq)]
 pub struct Hash(U256);
@@ -25,6 +26,12 @@ impl Hash {
     }
 }
 
+impl fmt::Display for Hash {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:x}", self.0)
+    }
+}
+
 #[cfg(test)]
 mod hash {
     use super::*;
@@ -36,11 +43,11 @@ mod hash {
     #[test]
     fn hash() {
         let foo = Foo(144);
-        let hash = Hash::hash(&foo).0;
-        println!("hash - {:?}", hash);
+        let hash = Hash::hash(&foo);
+        println!("{}", hash);
 
-        assert_eq!(hash.bits(), 255);
-        assert_eq!(type_name::<_>(hash), "btclib::U256")
+        assert_eq!(hash.0.bits(), 255);
+        assert_eq!(type_name::<_>(hash.0), "btclib::U256")
     }
 
     fn type_name<T>(_: T) -> &'static str {
