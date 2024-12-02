@@ -1,4 +1,5 @@
 use crate::U256;
+use k256::elliptic_curve::consts::U2;
 use serde::{Deserialize, Serialize};
 use sha256::digest;
 
@@ -17,6 +18,10 @@ impl Hash {
         let hash_array: [u8; 32] = hash_bytes.as_slice().try_into().unwrap();
 
         Hash(U256::from(hash_array))
+    }
+
+    pub fn matches_target(&self, target: U256) -> bool {
+        self.0 <= target
     }
 }
 
