@@ -24,6 +24,10 @@ impl Hash {
     pub fn matches_target(&self, target: U256) -> bool {
         self.0 <= target
     }
+
+    pub fn zero() -> Self {
+        Hash(U256::zero())
+    }
 }
 
 impl fmt::Display for Hash {
