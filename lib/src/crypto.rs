@@ -11,6 +11,16 @@ pub struct PublicKey(pub VerifyingKey<Secp256k1>);
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct PrivateKey(#[serde(with = "signkey_serde")] pub SigningKey<Secp256k1>);
 
+impl PrivateKey {
+    pub fn new_key() -> Self {
+        PrivateKey(SigningKey::random(&mut rand::thread_rng()))
+    }
+
+    pub fn public_key(&self) -> PublicKey {
+        PublicKey(self.0.verifying_key().clone())
+    }
+}
+
 mod signkey_serde {
     use serde::Deserialize;
 
