@@ -6,8 +6,8 @@
 
 # BTC
 - [x] Blockchain state -> all UTXO
-- [x] new inputs -> ref old outputs
-- [x] new output -> ref next input (withdraw)
-
+- [x] inputs -> ref old outputs + sign + trx validation
+- [x] output -> withdraw
+- [x] trx -> inputs + outputs + fee + metadata
 
 - [x] Find hash of block header which is less then target - Proof of Work. Nonce
