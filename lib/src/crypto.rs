@@ -1,3 +1,4 @@
+#[warn(unused_imports)]
 use ecdsa::{signature::Signer, Signature as ECDSASignature, SigningKey, VerifyingKey};
 use k256::Secp256k1;
 use serde::{Deserialize, Serialize};
