@@ -191,14 +191,14 @@ impl Block {
                 }
                 input_value += prev_output.value;
                 inputs.insert(input.prev_transaction_output_hash, prev_output.clone());
+            }
 
-                for output in &transaction.outputs {
-                    output_value += output.value
-                }
+            for output in &transaction.outputs {
+                output_value += output.value
+            }
 
-                if input_value < output_value {
-                    return Err(BtcError::InvalidTransaction);
-                }
+            if output_value > input_value {
+                return Err(BtcError::InvalidTransaction);
             }
         }
 
