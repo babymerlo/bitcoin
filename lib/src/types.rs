@@ -1,18 +1,20 @@
-use chrono::{DateTime, Utc};
-use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use uuid::Uuid;
-
 use crate::crypto::{PublicKey, Signature};
 use crate::error::{BtcError, Result};
 use crate::sha256::Hash;
 use crate::util::MerkleRoot;
 use crate::U256;
+use bigdecimal::BigDecimal;
+use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
+use std::collections::{HashMap, HashSet};
+use uuid::Uuid;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Blockchain {
     pub utxos: HashMap<Hash, TransactionOutput>,
     pub blocks: Vec<Block>,
+    pub target: U256,
+    pub mempool: Vec<Transaction>,
 }
 
 impl Blockchain {
@@ -20,6 +22,8 @@ impl Blockchain {
         Blockchain {
             utxos: HashMap::new(),
             blocks: vec![],
+            target: crate::MIN_TARGET,
+            mempool: vec![],
         }
     }
 
@@ -73,8 +77,59 @@ impl Blockchain {
 
             block.verify_transactions(self.block_height(), &self.utxos)?
         }
+        let block_transactions: HashSet<_> =
+            block.transactions.iter().map(|tx| tx.hash()).collect();
+
+        self.mempool
+            .retain(|tx| !block_transactions.contains(&tx.hash())); // use retain
+
         self.blocks.push(block);
+
         Ok(())
+    }
+
+    pub fn try_adjust_target(&mut self) {
+        if self.blocks.is_empty() {
+            return;
+        }
+
+        if self.blocks.len() % crate::DIFFICULTY_UPDATE_INTERVAL as usize != 0 {
+            return;
+        }
+
+        let start_time = self.blocks
+            [self.blocks.len() - crate::DIFFICULTY_UPDATE_INTERVAL as usize]
+            .header
+            .timestamp;
+        let end_time = self.blocks.last().unwrap().header.timestamp;
+        let time_diff_seconds = (end_time - start_time).num_seconds(); // delta
+        let target_seconds = crate::IDEAL_BLOCK_TIME * crate::DIFFICULTY_UPDATE_INTERVAL;
+
+        // multiply current target
+        let new_target = BigDecimal::parse_bytes(&self.target.to_string().as_bytes(), 10)
+            .expect("try_adjust_target: BigDecimal::parse_bytes failed")
+            * (BigDecimal::from(time_diff_seconds) / BigDecimal::from(target_seconds));
+
+        let new_target_str = new_target
+            .to_string()
+            .split('.')
+            .next()
+            .expect("expect decimal point")
+            .to_owned();
+
+        let new_target: U256 = U256::from_str_radix(&new_target_str, 10)
+            .expect("try_adjust_target: U256::from_str_radix failed");
+
+        // max factor - 4
+        let new_target = if new_target < self.target / 4 {
+            self.target / 4
+        } else if new_target > self.target * 4 {
+            self.target * 4
+        } else {
+            new_target
+        };
+
+        self.target = new_target.min(crate::MIN_TARGET)
     }
 }
 
