@@ -1,13 +1,14 @@
-use crate::crypto::{PublicKey, Signature};
-use crate::error::{BtcError, Result};
-use crate::sha256::Hash;
-use crate::util::MerkleRoot;
-use crate::U256;
 use bigdecimal::BigDecimal;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use uuid::Uuid;
+
+use crate::crypto::{PublicKey, Signature};
+use crate::error::{BtcError, Result};
+use crate::sha256::Hash;
+use crate::util::MerkleRoot;
+use crate::U256;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Blockchain {
@@ -298,6 +299,25 @@ impl BlockHeader {
 
     pub fn hash(&self) -> Hash {
         Hash::hash(self)
+    }
+
+    pub fn mine(&mut self, steps: usize) -> bool {
+        if self.hash().matches_target(self.target) {
+            return true;
+        }
+
+        for _ in 0..steps {
+            if let Some(new_nonce) = self.nonce.checked_add(1) {
+                self.nonce = new_nonce;
+            } else {
+                self.nonce = 0;
+                self.timestamp = Utc::now();
+            }
+            if self.hash().matches_target(self.target) {
+                return true;
+            }
+        }
+        false
     }
 }
 
