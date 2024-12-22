@@ -344,7 +344,7 @@ pub struct TransactionInput {
     pub signature: Signature,
 }
 
-/// txout
+/// txo
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct TransactionOutput {
     pub value: u64,
