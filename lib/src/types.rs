@@ -13,8 +13,9 @@ use crate::U256;
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Blockchain {
     utxos: HashMap<Hash, TransactionOutput>,
-    blocks: Vec<Block>,
     target: U256,
+    blocks: Vec<Block>,
+    #[serde(default, skip_serializing)]
     mempool: Vec<Transaction>,
 }
 
@@ -22,8 +23,8 @@ impl Blockchain {
     pub fn new() -> Self {
         Blockchain {
             utxos: HashMap::new(),
-            blocks: vec![],
             target: crate::MIN_TARGET,
+            blocks: vec![],
             mempool: vec![],
         }
     }
@@ -42,6 +43,10 @@ impl Blockchain {
 
     pub fn blocks(&self) -> impl Iterator<Item = &Block> {
         self.blocks.iter()
+    }
+
+    pub fn mempool(&self) -> &[Transaction] {
+        &self.mempool
     }
 
     pub fn rebuild_utxos(&mut self) {
@@ -98,6 +103,58 @@ impl Blockchain {
 
         self.blocks.push(block);
 
+        Ok(())
+    }
+
+    pub fn add_to_mempool(&mut self, transaction: Transaction) -> Result<()> {
+        // validate transaction before insert
+        // all inputs must have known UTXOs, and should be uniq
+        let mut known_inputs = HashSet::new();
+        for input in &transaction.inputs {
+            if !self.utxos.contains_key(&input.prev_transaction_output_hash) {
+                return Err(BtcError::InvalidTransaction);
+            }
+            if known_inputs.contains(&input.prev_transaction_output_hash) {
+                return Err(BtcError::InvalidTransaction);
+            }
+            known_inputs.insert(input.prev_transaction_output_hash);
+        }
+
+        let all_inputs = transaction
+            .inputs
+            .iter()
+            .map(|input| {
+                &self
+                    .utxos
+                    .get(&input.prev_transaction_output_hash)
+                    .expect("add_to_mempool: all_inputs failed")
+                    .value
+            })
+            .sum::<u64>();
+        let all_outputs = transaction.outputs.iter().map(|output| output.value).sum();
+        if all_inputs < all_outputs {
+            return Err(BtcError::InvalidTransaction);
+        }
+        self.mempool.push(transaction);
+
+        // sort by miner fee
+        self.mempool.sort_by_key(|transaction| {
+            let all_inputs = transaction
+                .inputs
+                .iter()
+                .map(|input| {
+                    self.utxos
+                        .get(&input.prev_transaction_output_hash)
+                        .expect("add_to_mempool: sort failed")
+                        .value
+                })
+                .sum::<u64>();
+
+            let all_outputs: u64 = transaction.outputs.iter().map(|output| output.value).sum();
+
+            let miner_fee = all_inputs - all_outputs;
+            miner_fee
+        });
         Ok(())
     }
 
