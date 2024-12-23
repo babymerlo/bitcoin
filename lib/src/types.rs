@@ -12,10 +12,10 @@ use crate::U256;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Blockchain {
-    pub utxos: HashMap<Hash, TransactionOutput>,
-    pub blocks: Vec<Block>,
-    pub target: U256,
-    pub mempool: Vec<Transaction>,
+    utxos: HashMap<Hash, TransactionOutput>,
+    blocks: Vec<Block>,
+    target: U256,
+    mempool: Vec<Transaction>,
 }
 
 impl Blockchain {
@@ -30,6 +30,18 @@ impl Blockchain {
 
     pub fn block_height(&self) -> u64 {
         self.blocks.len() as u64
+    }
+
+    pub fn utxos(&self) -> &HashMap<Hash, TransactionOutput> {
+        &self.utxos
+    }
+
+    pub fn target(&self) -> U256 {
+        self.target
+    }
+
+    pub fn blocks(&self) -> impl Iterator<Item = &Block> {
+        self.blocks.iter()
     }
 
     pub fn rebuild_utxos(&mut self) {
