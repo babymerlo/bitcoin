@@ -56,7 +56,8 @@ impl Blockchain {
                     self.utxos.remove(&input.prev_transaction_output_hash);
                 }
                 for output in transaction.outputs.iter() {
-                    self.utxos.insert(transaction.hash(), (false, output.clone()));
+                    self.utxos
+                        .insert(transaction.hash(), (false, output.clone()));
                 }
             }
         }
@@ -118,6 +119,34 @@ impl Blockchain {
                 return Err(BtcError::InvalidTransaction);
             }
             known_inputs.insert(input.prev_transaction_output_hash);
+        }
+
+        for input in &transaction.inputs {
+            if let Some((true, _)) = self.utxos.get(&input.prev_transaction_output_hash) {
+                let ref_transaction = self.mempool.iter().enumerate().find(|(_, transaction)| {
+                    transaction
+                        .outputs
+                        .iter()
+                        .any(|output| output.hash() == input.prev_transaction_output_hash)
+                });
+
+                if let Some((idx, ref_transaction)) = ref_transaction {
+                    for input in &ref_transaction.inputs {
+                        self.utxos
+                            .entry(input.prev_transaction_output_hash)
+                            .and_modify(|(marked, _)| {
+                                *marked = false;
+                            });
+                    }
+                    self.mempool.remove(idx);
+                } else {
+                    self.utxos
+                        .entry(input.prev_transaction_output_hash)
+                        .and_modify(|(marked, _)| {
+                            *marked = false;
+                        });
+                }
+            }
         }
 
         let all_inputs = transaction
@@ -249,14 +278,20 @@ impl Block {
         Ok(())
     }
 
-    pub fn calculate_miner_fees(&self, utxos: &HashMap<Hash, (bool, TransactionOutput)>) -> Result<u64> {
+    pub fn calculate_miner_fees(
+        &self,
+        utxos: &HashMap<Hash, (bool, TransactionOutput)>,
+    ) -> Result<u64> {
         let mut inputs: HashMap<Hash, TransactionOutput> = HashMap::new();
         let mut outputs: HashMap<Hash, TransactionOutput> = HashMap::new();
 
         for transaction in self.transactions.iter().skip(1) {
             for input in &transaction.inputs {
                 // match inputs to outputs
-                let prev_output = match utxos.get(&input.prev_transaction_output_hash).map(|(_, output)| output) {
+                let prev_output = match utxos
+                    .get(&input.prev_transaction_output_hash)
+                    .map(|(_, output)| output)
+                {
                     Some(output) => output,
                     None => return Err(BtcError::InvalidTransaction),
                 };
@@ -300,7 +335,10 @@ impl Block {
             let mut output_value = 0;
 
             for input in transaction.inputs.iter().skip(1) {
-                let prev_output = match utxos.get(&input.prev_transaction_output_hash).map(|(_, output)| output) {
+                let prev_output = match utxos
+                    .get(&input.prev_transaction_output_hash)
+                    .map(|(_, output)| output)
+                {
                     Some(output) => output,
                     None => return Err(BtcError::InvalidTransaction),
                 };
