@@ -202,6 +202,33 @@ impl Blockchain {
         Ok(())
     }
 
+    pub fn cleanup_mempool(&mut self) {
+        let now = Utc::now();
+        let mut utxo_hashes_to_unmark: Vec<Hash> = vec![];
+
+        self.mempool.retain(|(timestamp, transaction)| {
+            if now - *timestamp
+                > chrono::Duration::seconds(crate::MAX_MEMPOOL_TRANSACTION_AGE as i64)
+            {
+                utxo_hashes_to_unmark.extend(
+                    transaction
+                        .inputs
+                        .iter()
+                        .map(|input| input.prev_transaction_output_hash),
+                );
+                false
+            } else {
+                true
+            }
+        });
+
+        for hash in utxo_hashes_to_unmark {
+            self.utxos
+                .entry(hash)
+                .and_modify(|(marked, _)| *marked = false);
+        }
+    }
+
     pub fn try_adjust_target(&mut self) {
         if self.blocks.is_empty() {
             return;
