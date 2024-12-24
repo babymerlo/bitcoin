@@ -45,7 +45,7 @@ impl Blockchain {
         self.blocks.iter()
     }
 
-    pub fn mempool(&self) -> &Vec<(chrono::DateTime<Utc>, Transaction)> {
+    pub fn mempool(&self) -> &[(chrono::DateTime<Utc>, Transaction)] {
         &self.mempool
     }
 
@@ -169,6 +169,15 @@ impl Blockchain {
         if all_inputs < all_outputs {
             return Err(BtcError::InvalidTransaction);
         }
+
+        // mark UTXO as used
+        for input in &transaction.inputs {
+            self.utxos
+                .entry(input.prev_transaction_output_hash)
+                .and_modify(|(marked, _)| *marked = true);
+        }
+
+        // push trx to mempool
         self.mempool.push((Utc::now(), transaction));
 
         // sort by miner fee
