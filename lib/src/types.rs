@@ -16,7 +16,7 @@ pub struct Blockchain {
     target: U256,
     blocks: Vec<Block>,
     #[serde(default, skip_serializing)]
-    mempool: Vec<Transaction>,
+    mempool: Vec<(DateTime<Utc>, Transaction)>,
 }
 
 impl Blockchain {
@@ -45,7 +45,7 @@ impl Blockchain {
         self.blocks.iter()
     }
 
-    pub fn mempool(&self) -> &[Transaction] {
+    pub fn mempool(&self) -> &Vec<(chrono::DateTime<Utc>, Transaction)> {
         &self.mempool
     }
 
@@ -100,7 +100,7 @@ impl Blockchain {
             block.transactions.iter().map(|tx| tx.hash()).collect();
 
         self.mempool
-            .retain(|tx| !block_transactions.contains(&tx.hash())); // use retain
+            .retain(|(_, tx)| !block_transactions.contains(&tx.hash())); // use retain
 
         self.blocks.push(block);
 
@@ -123,14 +123,18 @@ impl Blockchain {
 
         for input in &transaction.inputs {
             if let Some((true, _)) = self.utxos.get(&input.prev_transaction_output_hash) {
-                let ref_transaction = self.mempool.iter().enumerate().find(|(_, transaction)| {
-                    transaction
-                        .outputs
+                let ref_transaction =
+                    self.mempool
                         .iter()
-                        .any(|output| output.hash() == input.prev_transaction_output_hash)
-                });
+                        .enumerate()
+                        .find(|(_, (_, transaction))| {
+                            transaction
+                                .outputs
+                                .iter()
+                                .any(|output| output.hash() == input.prev_transaction_output_hash)
+                        });
 
-                if let Some((idx, ref_transaction)) = ref_transaction {
+                if let Some((idx, (_, ref_transaction))) = ref_transaction {
                     for input in &ref_transaction.inputs {
                         self.utxos
                             .entry(input.prev_transaction_output_hash)
@@ -165,10 +169,10 @@ impl Blockchain {
         if all_inputs < all_outputs {
             return Err(BtcError::InvalidTransaction);
         }
-        self.mempool.push(transaction);
+        self.mempool.push((Utc::now(), transaction));
 
         // sort by miner fee
-        self.mempool.sort_by_key(|transaction| {
+        self.mempool.sort_by_key(|(_, transaction)| {
             let all_inputs = transaction
                 .inputs
                 .iter()
