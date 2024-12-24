@@ -12,7 +12,7 @@ use crate::U256;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Blockchain {
-    utxos: HashMap<Hash, TransactionOutput>,
+    utxos: HashMap<Hash, (bool, TransactionOutput)>,
     target: U256,
     blocks: Vec<Block>,
     #[serde(default, skip_serializing)]
@@ -33,7 +33,7 @@ impl Blockchain {
         self.blocks.len() as u64
     }
 
-    pub fn utxos(&self) -> &HashMap<Hash, TransactionOutput> {
+    pub fn utxos(&self) -> &HashMap<Hash, (bool, TransactionOutput)> {
         &self.utxos
     }
 
@@ -56,7 +56,7 @@ impl Blockchain {
                     self.utxos.remove(&input.prev_transaction_output_hash);
                 }
                 for output in transaction.outputs.iter() {
-                    self.utxos.insert(transaction.hash(), output.clone());
+                    self.utxos.insert(transaction.hash(), (false, output.clone()));
                 }
             }
         }
@@ -128,6 +128,7 @@ impl Blockchain {
                     .utxos
                     .get(&input.prev_transaction_output_hash)
                     .expect("add_to_mempool: all_inputs failed")
+                    .1
                     .value
             })
             .sum::<u64>();
@@ -146,6 +147,7 @@ impl Blockchain {
                     self.utxos
                         .get(&input.prev_transaction_output_hash)
                         .expect("add_to_mempool: sort failed")
+                        .1
                         .value
                 })
                 .sum::<u64>();
@@ -220,7 +222,7 @@ impl Block {
     pub fn verify_coinbase_transaction(
         &self,
         predicted_block_height: u64,
-        utxos: &HashMap<Hash, TransactionOutput>,
+        utxos: &HashMap<Hash, (bool, TransactionOutput)>,
     ) -> Result<()> {
         let coinbase_transaction = &self.transactions[0];
         if coinbase_transaction.inputs.len() != 0 {
@@ -230,7 +232,7 @@ impl Block {
             return Err(BtcError::InvalidTransaction);
         }
 
-        let miner_fees = self.calculated_miner_fees(utxos)?;
+        let miner_fees = self.calculate_miner_fees(utxos)?;
         let block_reward = crate::INITIAL_REWARD * 10u64.pow(8)
             / 2u64.pow((predicted_block_height / crate::HALVING_INTERVAL) as u32);
 
@@ -247,14 +249,14 @@ impl Block {
         Ok(())
     }
 
-    pub fn calculated_miner_fees(&self, utxos: &HashMap<Hash, TransactionOutput>) -> Result<u64> {
+    pub fn calculate_miner_fees(&self, utxos: &HashMap<Hash, (bool, TransactionOutput)>) -> Result<u64> {
         let mut inputs: HashMap<Hash, TransactionOutput> = HashMap::new();
         let mut outputs: HashMap<Hash, TransactionOutput> = HashMap::new();
 
         for transaction in self.transactions.iter().skip(1) {
             for input in &transaction.inputs {
                 // match inputs to outputs
-                let prev_output = match utxos.get(&input.prev_transaction_output_hash) {
+                let prev_output = match utxos.get(&input.prev_transaction_output_hash).map(|(_, output)| output) {
                     Some(output) => output,
                     None => return Err(BtcError::InvalidTransaction),
                 };
@@ -282,7 +284,7 @@ impl Block {
     pub fn verify_transactions(
         &self,
         predicted_block_height: u64,
-        utxos: &HashMap<Hash, TransactionOutput>,
+        utxos: &HashMap<Hash, (bool, TransactionOutput)>,
     ) -> Result<()> {
         let mut inputs: HashMap<Hash, TransactionOutput> = HashMap::new();
 
@@ -298,7 +300,7 @@ impl Block {
             let mut output_value = 0;
 
             for input in transaction.inputs.iter().skip(1) {
-                let prev_output = match utxos.get(&input.prev_transaction_output_hash) {
+                let prev_output = match utxos.get(&input.prev_transaction_output_hash).map(|(_, output)| output) {
                     Some(output) => output,
                     None => return Err(BtcError::InvalidTransaction),
                 };
