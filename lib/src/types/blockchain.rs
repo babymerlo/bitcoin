@@ -263,7 +263,7 @@ impl Blockchain {
         let new_target: U256 = U256::from_str_radix(&new_target_str, 10)
             .expect("try_adjust_target: U256::from_str_radix failed");
 
-        // max factor - 4
+        // max factor :D - 4
         let new_target = if new_target < self.target / 4 {
             self.target / 4
         } else if new_target > self.target * 4 {
