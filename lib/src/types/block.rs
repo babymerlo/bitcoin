@@ -196,9 +196,10 @@ impl BlockHeader {
                 self.nonce = new_nonce;
             } else {
                 self.nonce = 0;
-                self.timestamp = Utc::now();
+                self.timestamp = Utc::now()
             }
             if self.hash().matches_target(self.target) {
+                println!("nonce: {}", self.nonce);
                 return true;
             }
         }

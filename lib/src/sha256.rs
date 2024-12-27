@@ -42,6 +42,14 @@ impl fmt::Display for Hash {
     }
 }
 
+impl fmt::LowerHex for Hash {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let val = self.0;
+
+        fmt::LowerHex::fmt(&val, f)
+    }
+}
+
 #[cfg(test)]
 mod hash {
     use super::*;
