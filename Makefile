@@ -1,4 +1,4 @@
-# .PHONE: block block_print tx_gen tx_print
+.PHONY: block block_print tx_gen tx_print
 
 block_gen:
 	cargo run --bin block_gen block.cbor
