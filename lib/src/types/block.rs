@@ -1,7 +1,8 @@
-use chrono::{DateTime, Utc};
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::io::{Error as IoError, ErrorKind as IoErrorKind, Read, Result as IoResult, Write};
+
+use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 
 use super::{Transaction, TransactionOutput};
 use crate::error::{BtcError, Result};

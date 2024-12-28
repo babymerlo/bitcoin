@@ -1,11 +1,11 @@
-use btclib::crypto::PrivateKey;
-use btclib::sha256::Hash;
-use chrono::Utc;
-use uuid::Uuid;
-
 use std::env;
 use std::process::exit;
 
+use chrono::Utc;
+use uuid::Uuid;
+
+use btclib::crypto::PrivateKey;
+use btclib::sha256::Hash;
 use btclib::types::{Block, BlockHeader, Transaction, TransactionOutput};
 use btclib::util::{MerkleRoot, Saveable};
 

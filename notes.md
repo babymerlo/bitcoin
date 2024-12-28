@@ -4,6 +4,13 @@
 - [x] trait associated types
 - [x] attributes like #[serde(...)]
 
+### Async
+- [x] reactors
+- [x] executors
+
+# Tech
+- [?] actors
+
 # BTC
 
 - [x] Blockchain state -> all UTXO

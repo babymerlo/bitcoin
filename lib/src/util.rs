@@ -1,7 +1,8 @@
-use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::{Read, Result as IoResult, Write};
 use std::path::Path;
+
+use serde::{Deserialize, Serialize};
 
 use crate::sha256::Hash;
 use crate::types::Transaction;

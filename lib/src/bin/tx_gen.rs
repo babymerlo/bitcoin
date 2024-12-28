@@ -1,9 +1,9 @@
-use btclib::crypto::PrivateKey;
-use uuid::Uuid;
-
 use std::env;
 use std::process::exit;
 
+use uuid::Uuid;
+
+use btclib::crypto::PrivateKey;
 use btclib::types::{Transaction, TransactionOutput};
 use btclib::util::Saveable;
 

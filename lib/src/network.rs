@@ -1,5 +1,6 @@
-use serde::{Deserialize, Serialize};
 use std::io::{Error as IoError, Read, Write};
+
+use serde::{Deserialize, Serialize};
 
 use crate::{
     crypto::PublicKey,

@@ -1,6 +1,7 @@
+use std::fmt;
+
 use serde::{Deserialize, Serialize};
 use sha256::digest;
-use std::fmt;
 
 use crate::U256;
 

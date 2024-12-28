@@ -1,9 +1,11 @@
+use std::io::{Error as IoError, ErrorKind as IoErrorKind, Read, Result as IoResult, Write};
+
+use serde::{Deserialize, Serialize};
+use uuid::Uuid;
+
 use crate::crypto::{PublicKey, Signature};
 use crate::sha256::Hash;
 use crate::util::Saveable;
-use serde::{Deserialize, Serialize};
-use std::io::{Error as IoError, ErrorKind as IoErrorKind, Read, Result as IoResult, Write};
-use uuid::Uuid;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Transaction {
