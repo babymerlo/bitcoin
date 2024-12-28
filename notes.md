@@ -26,3 +26,8 @@
 - [x] Miner -> validate trx before add to block. also get trx with highest fee
 - [x] Validation -> verify sign of transaction input, verify balance, check double spending (uniq)
 - [x] validation process - add trx to mempool which use already marked utxo (pzdc)
+
+### Networking
+- [x] Miner <-> Node
+- [x] Node <-> Node
+- [x] Wallet <-> Node
