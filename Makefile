@@ -1,4 +1,4 @@
-.PHONY: block block_print tx_gen tx_print mining_test
+.PHONY: block block_print tx_gen tx_print mining_test key_gen_test
 
 block_gen:
 	cargo run --bin block_gen block.cbor
@@ -11,3 +11,5 @@ tx_print:
 mining_test:
 	@echo "Running miner with ROUNDS=$(ROUNDS)"
 	cargo run --bin miner ./block.cbor $(ROUNDS)
+key_gen_test:
+	cd lib && cargo run --bin key_gen ../miner/alice
